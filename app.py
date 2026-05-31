@@ -48,7 +48,7 @@ def default_player(userid, nickname="Player"):
         # Core identity
         "UserId": userid,
         "NickName": nickname,
-        "AccountKind": "guest",
+        "AccountKind": "guest",  # E_UserAcctKind: Normal=0, Guest=1, Facebook=2, Any=3
         "AppProvider": "google",
         # Progression
         "Level": 1,
@@ -58,9 +58,9 @@ def default_player(userid, nickname="Player"):
         "Credits": 99999,
         "Gold": 9999,
         "IsPremium": True,
-        # Items
-        "EquippedItems": [],
-        "OwnedItems": [],
+        # Items — starter weapons desbloqueados por defecto
+        "EquippedItems": ["SMG1", "AR1"],
+        "OwnedItems": ["SMG1", "AR1", "Shotgun1", "Sniper1", "StartBundle"],
         # Stats
         "Kills": 0,
         "Deaths": 0,
@@ -74,15 +74,19 @@ def default_player(userid, nickname="Player"):
         "_GameSettings": {
             "soundVolume": 1.0,
             "musicVolume": 1.0,
-            "controlScheme": 0
+            "controlScheme": 0,
+            "RefundCostPerItemGolds": 40  # GameCloudSettings.cs
         },
         # Premium
         "_PremiumAccountsDesc": {
             "isPremium": True,
-            "expiryTime": 9999999999
+            "expiryTime": 9999999999,
+            "xpBonus": 1.5,
+            "creditsBonus": 1.5
         },
         "Avatar": 0,
         "CustomRegion": "",
+        # SecurityTools.cs roles: dz_police, dz_sheriff, dz_developer, dz_log
         "Roles": [],
         "desc": "",
         "code": ""
@@ -199,20 +203,54 @@ def get_product_data():
     param = p.get("param", "")
 
     if param == "_ShopItems":
+        # IDs reales basados en E_WeaponID.cs, E_BundleID.cs y Settings<Key>.cs
         return ok({"param": "_ShopItems", "data": [
-            {"id": "weapon_pistol",   "name": "Pistol",        "price": 0,    "currency": "Credits", "unlockLevel": 1},
-            {"id": "weapon_rifle",    "name": "Assault Rifle", "price": 1000, "currency": "Credits", "unlockLevel": 2},
-            {"id": "weapon_shotgun",  "name": "Shotgun",       "price": 1500, "currency": "Credits", "unlockLevel": 3},
-            {"id": "weapon_sniper",   "name": "Sniper Rifle",  "price": 2000, "currency": "Credits", "unlockLevel": 5},
-            {"id": "weapon_smg",      "name": "SMG",           "price": 1200, "currency": "Credits", "unlockLevel": 4},
-            {"id": "weapon_rocket",   "name": "Rocket Launcher","price": 3000,"currency": "Credits", "unlockLevel": 8},
-            {"id": "armor_light",     "name": "Light Armor",   "price": 500,  "currency": "Credits", "unlockLevel": 1},
-            {"id": "armor_medium",    "name": "Medium Armor",  "price": 1000, "currency": "Credits", "unlockLevel": 3},
-            {"id": "armor_heavy",     "name": "Heavy Armor",   "price": 2000, "currency": "Credits", "unlockLevel": 6},
-            {"id": "grenade_frag",    "name": "Frag Grenade",  "price": 300,  "currency": "Credits", "unlockLevel": 2},
-            {"id": "grenade_emp",     "name": "EMP Grenade",   "price": 500,  "currency": "Credits", "unlockLevel": 4},
-            {"id": "premium_week",    "name": "Premium 1 Week","price": 50,   "currency": "Gold",    "unlockLevel": 1},
-            {"id": "premium_month",   "name": "Premium 1 Month","price": 150, "currency": "Gold",    "unlockLevel": 1},
+            # ── SMGs (E_WeaponID: SMG1-4) ──
+            {"id": "SMG1", "name": "SMG Mk1", "weaponType": 0, "price": 0,    "currency": "Credits", "MinRank": 1,  "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "SMG2", "name": "SMG Mk2", "weaponType": 0, "price": 2000, "currency": "Credits", "MinRank": 5,  "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "SMG3", "name": "SMG Mk3", "weaponType": 0, "price": 4000, "currency": "Credits", "MinRank": 10, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "SMG4", "name": "SMG Mk4", "weaponType": 0, "price": 200,  "currency": "Gold",    "MinRank": 15, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": True,  "BundleOnly": False, "RareItem": True},
+            # ── Assault Rifles (E_WeaponID: AR1-4) ──
+            {"id": "AR1",  "name": "Assault Rifle Mk1", "weaponType": 0, "price": 0,    "currency": "Credits", "MinRank": 1,  "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "AR2",  "name": "Assault Rifle Mk2", "weaponType": 0, "price": 3000, "currency": "Credits", "MinRank": 6,  "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "AR3",  "name": "Assault Rifle Mk3", "weaponType": 0, "price": 6000, "currency": "Credits", "MinRank": 12, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "AR4",  "name": "Assault Rifle Mk4", "weaponType": 0, "price": 300,  "currency": "Gold",    "MinRank": 18, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": True,  "BundleOnly": False, "RareItem": True},
+            # ── Machine Guns (E_WeaponID: MG1-4) ──
+            {"id": "MG1",  "name": "Machine Gun Mk1", "weaponType": 0, "price": 2500, "currency": "Credits", "MinRank": 4,  "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "MG2",  "name": "Machine Gun Mk2", "weaponType": 0, "price": 5000, "currency": "Credits", "MinRank": 9,  "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "MG3",  "name": "Machine Gun Mk3", "weaponType": 0, "price": 8000, "currency": "Credits", "MinRank": 14, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "MG4",  "name": "Machine Gun Mk4", "weaponType": 0, "price": 400,  "currency": "Gold",    "MinRank": 20, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": True,  "BundleOnly": False, "RareItem": True},
+            # ── Shotguns (E_WeaponID: Shotgun1-3) ──
+            {"id": "Shotgun1", "name": "Shotgun Mk1", "weaponType": 2, "price": 1500, "currency": "Credits", "MinRank": 3,  "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "Shotgun2", "name": "Shotgun Mk2", "weaponType": 2, "price": 4500, "currency": "Credits", "MinRank": 8,  "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "Shotgun3", "name": "Shotgun Mk3", "weaponType": 2, "price": 350,  "currency": "Gold",    "MinRank": 16, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": True,  "BundleOnly": False, "RareItem": True},
+            # ── Snipers (E_WeaponID: Sniper1-3) ──
+            {"id": "Sniper1",  "name": "Sniper Rifle Mk1", "weaponType": 3, "price": 2000, "currency": "Credits", "MinRank": 5,  "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "Sniper2",  "name": "Sniper Rifle Mk2", "weaponType": 3, "price": 5500, "currency": "Credits", "MinRank": 11, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "Sniper3",  "name": "Sniper Rifle Mk3", "weaponType": 3, "price": 400,  "currency": "Gold",    "MinRank": 17, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": True,  "BundleOnly": False, "RareItem": True},
+            # ── Launchers (E_WeaponID: Launcher1-3) ──
+            {"id": "Launcher1", "name": "Rocket Launcher Mk1", "weaponType": 4, "price": 3000, "currency": "Credits", "MinRank": 7,  "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "Launcher2", "name": "Rocket Launcher Mk2", "weaponType": 4, "price": 7000, "currency": "Credits", "MinRank": 13, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "Launcher3", "name": "Rocket Launcher Mk3", "weaponType": 4, "price": 500,  "currency": "Gold",    "MinRank": 19, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": True,  "BundleOnly": False, "RareItem": True},
+            # ── Plasma (E_WeaponID: Plasma1-4) ──
+            {"id": "Plasma1",  "name": "Plasma Gun Mk1", "weaponType": 1, "price": 3500, "currency": "Credits", "MinRank": 8,  "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "Plasma2",  "name": "Plasma Gun Mk2", "weaponType": 1, "price": 7500, "currency": "Credits", "MinRank": 14, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "Plasma3",  "name": "Plasma Gun Mk3", "weaponType": 1, "price": 450,  "currency": "Gold",    "MinRank": 18, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": True,  "BundleOnly": False, "RareItem": True},
+            {"id": "Plasma4",  "name": "Plasma Gun Mk4", "weaponType": 1, "price": 600,  "currency": "Gold",    "MinRank": 22, "EquipGroup": 1, "AvailableInShop": True, "PremiumOnly": True,  "BundleOnly": False, "RareItem": True},
+            # ── Bundles (E_BundleID.cs) ──
+            {"id": "StartBundle",       "name": "Starter Bundle",   "price": 0,   "currency": "Credits", "MinRank": 1,  "EquipGroup": 0, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": True, "RareItem": False},
+            {"id": "MedicBundle",       "name": "Medic Bundle",     "price": 100, "currency": "Gold",    "MinRank": 3,  "EquipGroup": 0, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": True, "RareItem": False},
+            {"id": "AssultBundle",      "name": "Assault Bundle",   "price": 150, "currency": "Gold",    "MinRank": 5,  "EquipGroup": 0, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": True, "RareItem": False},
+            {"id": "SniperBundle",      "name": "Sniper Bundle",    "price": 150, "currency": "Gold",    "MinRank": 5,  "EquipGroup": 0, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": True, "RareItem": False},
+            {"id": "HeavyBundle",       "name": "Heavy Bundle",     "price": 200, "currency": "Gold",    "MinRank": 8,  "EquipGroup": 0, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": True, "RareItem": False},
+            {"id": "ScoutBundle",       "name": "Scout Bundle",     "price": 200, "currency": "Gold",    "MinRank": 8,  "EquipGroup": 0, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": True, "RareItem": False},
+            {"id": "ShadowgunBundle",   "name": "Shadowgun Bundle", "price": 300, "currency": "Gold",    "MinRank": 12, "EquipGroup": 0, "AvailableInShop": True, "PremiumOnly": True,  "BundleOnly": True, "RareItem": True},
+            {"id": "GoldenBundle",      "name": "Golden Bundle",    "price": 500, "currency": "Gold",    "MinRank": 15, "EquipGroup": 0, "AvailableInShop": True, "PremiumOnly": True,  "BundleOnly": True, "RareItem": True},
+            {"id": "PremiumPromoBundle","name": "Premium Promo",    "price": 99,  "currency": "Gold",    "MinRank": 1,  "EquipGroup": 0, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": True, "RareItem": False},
+            {"id": "VeteranBundle",     "name": "Veteran Bundle",   "price": 400, "currency": "Gold",    "MinRank": 20, "EquipGroup": 0, "AvailableInShop": True, "PremiumOnly": True,  "BundleOnly": True, "RareItem": True},
+            # ── Premium ──
+            {"id": "premium_week",  "name": "Premium 1 Week",  "price": 50,  "currency": "Gold", "MinRank": 1, "EquipGroup": 0, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
+            {"id": "premium_month", "name": "Premium 1 Month", "price": 150, "currency": "Gold", "MinRank": 1, "EquipGroup": 0, "AvailableInShop": True, "PremiumOnly": False, "BundleOnly": False, "RareItem": False},
         ]})
 
     if param == "_GameSettings":
