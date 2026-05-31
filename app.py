@@ -60,6 +60,16 @@ def default_player_data(userid):
     }
 
 
+@app.route("/sgdz/getAppVersion", methods=["GET"])
+def get_app_version():
+    return gzip_response(json.dumps({
+        "result": "ok",
+        "version": "2.10.0",
+        "needsUpdate": False,
+        "obbValid": True
+    }))
+
+
 @app.route("/sgdz/getProductData", methods=["GET"])
 def get_product_data():
     p = parse_param(request)
@@ -83,7 +93,6 @@ def get_product_data():
     return gzip_response(json.dumps(data))
 
 
-
 @app.route("/sgdz/userExists", methods=["GET"])
 def user_exists():
     p = parse_param(request)
@@ -97,7 +106,6 @@ def user_exists():
         return gzip_response("0")
 
     return gzip_response("1")
-
 
 
 @app.route("/sgdz/CreateUser", methods=["POST"])
@@ -133,7 +141,6 @@ def user_get_primary_key():
     if userid not in users:
         return gzip_response(json.dumps({"result": "error", "msg": "User not found"}))
 
-  
     key = hashlib.md5(f"{userid}:shadowgun".encode()).hexdigest()
     return gzip_response(json.dumps({
         "result": "ok",
@@ -160,7 +167,6 @@ def get_usr_per_product_data():
     return gzip_response(json.dumps({"result": "ok", "data": {}}))
 
 
-
 @app.route("/sgdz/getUsrData", methods=["GET"])
 def get_usr_data():
     p = parse_param(request)
@@ -172,7 +178,6 @@ def get_usr_data():
 
     val = user_data[userid].get(param, [])
     return gzip_response(json.dumps({"result": "ok", "data": val}))
-
 
 
 @app.route("/sgdz/UserAddProductData", methods=["POST"])
@@ -258,7 +263,6 @@ def batch_command():
     p = parse_param(request)
     userid = p.get("userid", "")
 
-    
     return gzip_response(json.dumps({
         "result": "ok",
         "userid": userid,
@@ -311,6 +315,7 @@ def fetch_inbox_msgs():
         ]
     }))
 
+
 @app.route("/sgdz/clanapi", methods=["GET"])
 def clan_api():
     cmd = request.args.get("cmd", "")
@@ -355,9 +360,11 @@ def cloud_api():
 
     return gzip_response(json.dumps({"result": "ok"}))
 
+
 @app.route("/sgdz/RequestResetPassword", methods=["POST"])
 def reset_password():
     return gzip_response(json.dumps({"result": "ok", "msg": "Reset not needed on Shadowgun: Deadzone server"}))
+
 
 @app.route("/", methods=["GET"])
 def index():
