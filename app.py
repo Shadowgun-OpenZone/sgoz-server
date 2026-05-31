@@ -366,6 +366,11 @@ def reset_password():
     return gzip_response(json.dumps({"result": "ok", "msg": "Reset not needed on Shadowgun: Deadzone server"}))
 
 
+@app.route("/sgdz/<path:endpoint>", methods=["GET", "POST"])
+def catch_all(endpoint):
+    return gzip_response(json.dumps({"result": "ok"}))
+
+
 @app.route("/", methods=["GET"])
 def index():
     return jsonify({
