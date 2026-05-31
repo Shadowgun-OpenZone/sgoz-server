@@ -102,6 +102,8 @@ def default_user_data():
     }
 
 def get_or_create_player(userid):
+    if not userid:
+        userid = "revival_guest"
     if userid not in player_data:
         player_data[userid] = default_player(userid)
     if userid not in user_data:
@@ -129,6 +131,9 @@ def user_exists():
     p = parse_param(request)
     userid = p.get("userid", "")
     pw = p.get("pw", "")
+    # Si param viene encriptado con AES no podemos leerlo → asumir que el usuario existe
+    if not userid:
+        return gz("1")
     if userid not in users:
         return gz("0")
     if pw and users[userid].get("pw", "") != pw:
@@ -172,15 +177,16 @@ def user_get_primary_key():
     userid = p.get("userid", "")
     pw     = p.get("pw", "")
 
-    # Auto-create guest accounts
+    # Si param viene encriptado con AES → crear/usar cuenta genérica de revival
+    if not userid:
+        userid = "revival_guest"
+
+    # Auto-create si no existe
     if userid not in users:
-        if userid.startswith("guest"):
-            users[userid] = {"pw": pw, "email": "", "nickname": userid,
-                             "kind": "guest", "created": int(time.time())}
-            player_data[userid] = default_player(userid, userid)
-            user_data[userid] = default_user_data()
-        else:
-            return err("invalidusr")
+        users[userid] = {"pw": pw, "email": "", "nickname": userid,
+                         "kind": "guest", "created": int(time.time())}
+        player_data[userid] = default_player(userid, userid)
+        user_data[userid] = default_user_data()
 
     key = hashlib.md5(f"{userid}:sgdz_revival".encode()).hexdigest()
     return ok({"primaryKey": key, "userid": userid,
@@ -191,7 +197,10 @@ def user_get_primary_key():
 @app.route("/sgdz/_VaidateUserData", methods=["GET", "POST"])
 def validate_account():
     p = parse_param(request)
-    userid = p.get("userid", "")
+    userid = p.get("userid", "revival_guest")
+    # Si param AES → usar cuenta genérica
+    if not userid:
+        userid = "revival_guest"
     get_or_create_player(userid)
     return ok({"valid": True, "userid": userid,
                "NickName": users.get(userid, {}).get("nickname", userid)})
@@ -201,6 +210,10 @@ def validate_account():
 def get_product_data():
     p = parse_param(request)
     param = p.get("param", "")
+
+    # Si param viene encriptado AES → devolver _ShopItems por defecto
+    if not param:
+        param = "_ShopItems"
 
     if param == "_ShopItems":
         # IDs reales basados en E_WeaponID.cs, E_BundleID.cs y Settings<Key>.cs
